@@ -1,10 +1,10 @@
 import React from "react";
-import { RouteManagerSidebar } from "./RouteManagerSidebar"; // THE ONE YOU ALREADY MADE
-import { RouteManagerMap } from "./RouteManagerMap";
+// CAPS LOCK COMMENT: FIXED IMPORT PATHS TO POINT TO COMPONENTS AND HOOKS
+import { RouteManagerSidebar } from "../components/RouteManagerSidebar";
+import { RouteManagerMap } from "../components/RouteManagerMap";
 import { useRouteManager } from "../hooks/useRouteManager";
 
 export const RouteManager: React.FC = () => {
-  // --- USE THE CUSTOM HOOK TO GET LOGIC AND STATE ---
   const {
     markers,
     selectedMarker,
@@ -16,45 +16,29 @@ export const RouteManager: React.FC = () => {
   } = useRouteManager();
 
   return (
-    <div
-      style={{
-        display: "flex",
-        height: "100vh",
-        width: "100vw",
-        overflow: "hidden",
-      }}
-    >
-      {/* --- SIDEBAR COMPONENT --- */}
-      {/* PASSING DOWN STATE AND HANDLERS AS PROPS */}
+    // CAPS LOCK COMMENT: REPLACED INLINE STYLES WITH TAILWIND FLEX UTILITIES
+    <div className="flex h-screen w-screen overflow-hidden">
+      {/* --- SIDEBAR --- */}
       <RouteManagerSidebar
         selectedMarker={selectedMarker}
         isLoading={isLoading}
         onUpdateMarker={saveMarker}
         onDeleteMarker={deleteMarker}
-        onCloseSidebar={() => setSelectedMarker(null)} // DESELECT WHEN CLOSING
+        onCloseSidebar={() => setSelectedMarker(null)}
       />
 
       {/* --- MAP CONTAINER --- */}
-      <div style={{ flex: 1, position: "relative" }}>
+      <div className="flex-1 relative">
         <RouteManagerMap
           markers={markers}
           onMapClick={handleMapClick}
           onMarkerClick={setSelectedMarker}
         />
 
-        {/* --- OPTIONAL: LOADING OVERLAY --- */}
+        {/* --- LOADING OVERLAY --- */}
         {isLoading && (
-          <div
-            style={{
-              position: "absolute",
-              top: 20,
-              right: 20,
-              background: "white",
-              padding: "10px",
-              borderRadius: "8px",
-              zIndex: 10,
-            }}
-          >
+          // CAPS LOCK COMMENT: REPLACED INLINE STYLES WITH TAILWIND ABSOLUTE POSITIONING
+          <div className="absolute top-5 right-5 bg-white p-2.5 rounded-lg z-10 shadow-md">
             Saving Data...
           </div>
         )}

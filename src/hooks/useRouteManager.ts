@@ -1,14 +1,14 @@
 import { useState, useEffect, useCallback } from "react";
-import { createClient } from "@supabase/supabase-js"; // OR IMPORT YOUR EXISTING SUPABASE CLIENT
-import { Database } from "../types/supabase"; // ASSUMING YOU HAVE GENERATED TYPES
+import { createClient } from "@supabase/supabase-js";
+import { Database } from "../types/supabase"; // CAPS LOCK COMMENT: NOW POINTS TO CORRECT FILE
 
-// --- INITIALIZE SUPABASE CLIENT (IF NOT ALREADY GLOBAL) ---
+// --- INITIALIZE SUPABASE CLIENT ---
+// CAPS LOCK COMMENT: ENV ERRORS ARE FIXED BY VITE-ENV.D.TS
 const supabase = createClient<Database>(
   import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_KEY
+  import.meta.env.VITE_SUPABASE_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY
 );
 
-// --- DEFINE TYPES LOCALLY OR IMPORT THEM ---
 export type MarkerType = "TERMINAL" | "STOP";
 
 export interface MapMarker {
@@ -20,31 +20,24 @@ export interface MapMarker {
 }
 
 export const useRouteManager = () => {
-  // --- STATE: HOLDS THE LIST OF ALL MARKERS (STOPS/TERMINALS) ---
+  // --- STATE MANAGEMENT ---
   const [markers, setMarkers] = useState<MapMarker[]>([]);
-
-  // --- STATE: HOLDS THE CURRENTLY SELECTED MARKER FOR EDITING ---
   const [selectedMarker, setSelectedMarker] = useState<MapMarker | null>(null);
-
-  // --- STATE: LOADING INDICATOR FOR ASYNC OPERATIONS ---
   const [isLoading, setIsLoading] = useState(false);
 
-  // --- EFFECT: FETCH INITIAL DATA ON MOUNT ---
   useEffect(() => {
     fetchMarkers();
   }, []);
 
-  // --- FUNCTION: FETCH ALL MARKERS FROM SUPABASE ---
   const fetchMarkers = async () => {
     try {
       setIsLoading(true);
-      // SELECT ALL COLUMNS FROM THE 'stops' TABLE (ADJUST TABLE NAME AS NEEDED)
       const { data, error } = await supabase.from("stops").select("*");
 
       if (error) throw error;
 
       if (data) {
-        // MAP DB RESPONSE TO OUR FRONTEND STATE SHAPE
+        // CAPS LOCK COMMENT: MAPPING DB TYPES TO UI TYPES
         const formattedData: MapMarker[] = data.map((item: any) => ({
           id: item.id,
           lat: item.latitude,
@@ -61,28 +54,21 @@ export const useRouteManager = () => {
     }
   };
 
-  // --- FUNCTION: ADD A NEW TEMPORARY MARKER (CALLED ON MAP CLICK) ---
   const handleMapClick = useCallback((lat: number, lng: number) => {
-    // CREATE A NEW 'DRAFT' MARKER
     const newMarker: MapMarker = {
-      id: crypto.randomUUID(), // GENERATE TEMP ID
+      id: crypto.randomUUID(),
       lat,
       lng,
-      type: "STOP", // DEFAULT TYPE
+      type: "STOP",
       name: "New Stop",
     };
-
-    // ADD TO STATE IMMEDIATELY (OPTIMISTIC UPDATE)
     setMarkers((prev) => [...prev, newMarker]);
     setSelectedMarker(newMarker);
   }, []);
 
-  // --- FUNCTION: SAVE OR UPDATE MARKER IN SUPABASE ---
   const saveMarker = async (marker: MapMarker) => {
     try {
       setIsLoading(true);
-
-      // UPSERT: UPDATE IF EXISTS, INSERT IF NEW
       const { error } = await supabase.from("stops").upsert({
         id: marker.id,
         latitude: marker.lat,
@@ -92,8 +78,6 @@ export const useRouteManager = () => {
       });
 
       if (error) throw error;
-
-      // REFRESH DATA TO ENSURE SYNC
       await fetchMarkers();
     } catch (error) {
       console.error("ERROR SAVING MARKER:", error);
@@ -103,14 +87,11 @@ export const useRouteManager = () => {
     }
   };
 
-  // --- FUNCTION: DELETE A MARKER ---
   const deleteMarker = async (id: string) => {
     try {
       setIsLoading(true);
       const { error } = await supabase.from("stops").delete().eq("id", id);
       if (error) throw error;
-
-      // REMOVE FROM LOCAL STATE
       setMarkers((prev) => prev.filter((m) => m.id !== id));
       setSelectedMarker(null);
     } catch (error) {
