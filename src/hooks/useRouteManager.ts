@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { Database } from "../types/supabase";
+import { Stop } from "../types";
 
-// CAPS LOCK COMMENT: REMOVED UNUSED 'StopRow' TYPE DEFINITION
+// CAPS LOCK COMMENT: ENSURE DB TYPES ARE CORRECT
 type StopInsert = Database["public"]["Tables"]["stops"]["Insert"];
 
 const supabase = createClient<Database>(
@@ -10,19 +11,16 @@ const supabase = createClient<Database>(
   import.meta.env.VITE_SUPABASE_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY
 );
 
-export type MarkerType = "TERMINAL" | "STOP";
-
-export interface MapMarker {
-  id: string;
-  lat: number;
-  lng: number;
-  type: MarkerType;
-  name: string;
-}
-
 export const useRouteManager = () => {
-  const [markers, setMarkers] = useState<MapMarker[]>([]);
-  const [selectedMarker, setSelectedMarker] = useState<MapMarker | null>(null);
+  const [markers, setMarkers] = useState<Stop[]>([]);
+  const [selectedMarker, setSelectedMarker] = useState<Stop | null>(null);
+
+  // CAPS LOCK COMMENT: NEW STATE FOR 'GHOST' MARKER (VISUAL FEEDBACK ON CLICK)
+  const [tempMarker, setTempMarker] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
+
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -37,14 +35,25 @@ export const useRouteManager = () => {
       if (error) throw error;
 
       if (data) {
-        // CAPS LOCK COMMENT: TYPESCRIPT AUTOMATICALLY INFERS TYPES HERE
-        const formattedData: MapMarker[] = data.map((item) => ({
-          id: item.id,
-          lat: item.latitude,
-          lng: item.longitude,
-          type: item.type,
-          name: item.name,
-        }));
+        const formattedData: Stop[] = data
+          .map((item) => {
+            const lat = Number(item.latitude);
+            const lng = Number(item.longitude);
+
+            if (isNaN(lat) || isNaN(lng)) return null;
+
+            return {
+              id: item.id,
+              lat: lat,
+              lng: lng,
+              type: (item.type || "stop").toLowerCase() as "terminal" | "stop",
+              name: item.name || "Unnamed",
+              barangay: item.barangay || "",
+              vehicleTypes: item.vehicle_types || [],
+            };
+          })
+          .filter((item): item is Stop => item !== null);
+
         setMarkers(formattedData);
       }
     } catch (error) {
@@ -55,18 +64,25 @@ export const useRouteManager = () => {
   };
 
   const handleMapClick = useCallback((lat: number, lng: number) => {
-    const newMarker: MapMarker = {
+    if (isNaN(lat) || isNaN(lng)) return;
+
+    // 1. SET TEMP MARKER FOR VISUAL FEEDBACK
+    setTempMarker({ lat, lng });
+
+    // 2. OPEN FORM WITH NEW DATA
+    const newMarker: Stop = {
       id: crypto.randomUUID(),
       lat,
       lng,
-      type: "STOP",
-      name: "New Stop",
+      type: "stop",
+      name: "",
+      barangay: "",
+      vehicleTypes: [],
     };
-    setMarkers((prev) => [...prev, newMarker]);
     setSelectedMarker(newMarker);
   }, []);
 
-  const saveMarker = async (marker: MapMarker) => {
+  const saveMarker = async (marker: Stop) => {
     try {
       setIsLoading(true);
 
@@ -76,15 +92,20 @@ export const useRouteManager = () => {
         longitude: marker.lng,
         type: marker.type,
         name: marker.name,
+        barangay: marker.barangay,
+        vehicle_types: marker.vehicleTypes,
       };
 
       const { error } = await supabase.from("stops").upsert(payload);
 
       if (error) throw error;
+
       await fetchMarkers();
+      setSelectedMarker(null);
+      setTempMarker(null); // CLEAR GHOST MARKER ON SUCCESS
     } catch (error) {
       console.error("ERROR SAVING MARKER:", error);
-      alert("Failed to save marker.");
+      alert("Failed to save marker. Check console for details.");
     } finally {
       setIsLoading(false);
     }
@@ -95,6 +116,7 @@ export const useRouteManager = () => {
       setIsLoading(true);
       const { error } = await supabase.from("stops").delete().eq("id", id);
       if (error) throw error;
+
       setMarkers((prev) => prev.filter((m) => m.id !== id));
       setSelectedMarker(null);
     } catch (error) {
@@ -107,6 +129,7 @@ export const useRouteManager = () => {
   return {
     markers,
     selectedMarker,
+    tempMarker, // EXPORT THIS
     isLoading,
     setSelectedMarker,
     handleMapClick,

@@ -1,31 +1,25 @@
-import { useState } from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import GlobalSidebar from "./components/GlobalSidebar";
 import RouteManager from "./pages/RouteManager";
-
-// Placeholder pages for demonstration
-const PlaceholderPage = ({ title }: { title: string }) => (
-  <div className="flex-1 flex items-center justify-center bg-gray-50 text-gray-400 font-bold text-2xl">
-    {title} Page Coming Soon
-  </div>
-);
+import "./App.css";
 
 function App() {
-  const [activePage, setActivePage] = useState("routes");
-
   return (
-    // MAIN LAYOUT CONTAINER
-    <div className="flex h-screen w-screen overflow-hidden bg-gray-100">
-      {/* 1. Global Navigation (Always Visible) */}
-      <GlobalSidebar activePage={activePage} onNavigate={setActivePage} />
+    <Router>
+      <div className="flex h-screen w-screen overflow-hidden bg-slate-100">
+        {/* --- GLOBAL SIDEBAR LIVES HERE ONCE --- */}
+        <GlobalSidebar />
 
-      {/* 2. Main Content Area */}
-      <main className="flex-1 h-full relative flex flex-col">
-        {activePage === "routes" && <RouteManager />}
-        {activePage === "analytics" && <PlaceholderPage title="Analytics" />}
-        {activePage === "users" && <PlaceholderPage title="Users" />}
-        {activePage === "settings" && <PlaceholderPage title="Settings" />}
-      </main>
-    </div>
+        {/* --- MAIN CONTENT AREA --- */}
+        <div className="flex-1 overflow-hidden">
+          <Routes>
+            <Route path="/" element={<RouteManager />} />
+            {/* ADD OTHER ROUTES HERE LATER, E.G.: */}
+            {/* <Route path="/dashboard" element={<Dashboard />} /> */}
+          </Routes>
+        </div>
+      </div>
+    </Router>
   );
 }
 
