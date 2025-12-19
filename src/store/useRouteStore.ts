@@ -1,17 +1,10 @@
 import { create } from "zustand";
-import { createClient } from "@supabase/supabase-js";
+import { supabase } from "../lib/supabaseClient"; // NEW
 import { Database } from "../types/supabase";
 import { Stop } from "../types";
 
 // CAPS LOCK COMMENT: SUPABASE INSERT TYPE FOR STOPS TABLE
 type StopInsert = Database["public"]["Tables"]["stops"]["Insert"];
-
-// CAPS LOCK COMMENT: INITIALIZE SUPABASE CLIENT USING ENV VARS
-const supabase = createClient<Database>(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY
-);
-
 interface RouteState {
   // STATE
   markers: Stop[];

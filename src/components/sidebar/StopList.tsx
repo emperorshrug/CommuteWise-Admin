@@ -1,11 +1,30 @@
-// [FIX] Removed unused 'MapPin' import
+// src/components/sidebar/StopList.tsx
+
+/**
+ * CONTEXT: COMMUTEWISE STOP LIST / TERMINAL LIST
+ * ==============================================
+ * CURRENT BEHAVIOR (BASELINE):
+ * - GROUP STOPS BY BARANGAY
+ * - RENDER TERMINAL / STOP CARDS
+ * - CLICKING A CARD SELECTS THE STOP (OPENS StopForm)
+ *
+ * THIS FILE IS NOW CLEAN OF:
+ * - CONDITIONAL HOOK USAGE
+ * - UNUSED VARIABLES
+ *
+ * LATER WE WILL EXTEND THIS TO:
+ * - SHOW TERMINAL -> ROUTE CARDS -> ROUTE STOP LISTS
+ * - WIRE ROUTE HOVER / EDIT / DELETE BEHAVIOR
+ */
+
 import { Navigation, ChevronDown } from "lucide-react";
 import { Stop } from "../../types";
 import { getMarkerStyle } from "../../utils/markerUtils";
 
 interface StopListProps {
   stops: Stop[];
-  onSelectStop: (marker: Stop) => void;
+  // CAPS LOCK COMMENT: MATCHES useRouteStore().selectMarker SIGNATURE (Stop | null)
+  onSelectStop: (marker: Stop | null) => void;
   activeTab: string;
 }
 
@@ -14,6 +33,7 @@ export default function StopList({
   onSelectStop,
   activeTab,
 }: StopListProps) {
+  // CAPS LOCK COMMENT: BASIC EMPTY STATE - NO HOOKS ABOVE THIS RETURN
   if (stops.length === 0) {
     return (
       <div className="p-10 text-center text-slate-400 flex flex-col items-center mt-10">
@@ -28,7 +48,7 @@ export default function StopList({
     );
   }
 
-  // GROUP BY BARANGAY
+  // CAPS LOCK COMMENT: GROUP STOPS BY BARANGAY (NO REACT HOOKS NEEDED)
   const grouped = stops.reduce((acc, stop) => {
     const b = stop.barangay || "Unassigned";
     if (!acc[b]) acc[b] = [];
@@ -56,7 +76,6 @@ export default function StopList({
           {/* STOP ITEMS */}
           <div className="divide-y divide-slate-50">
             {items.map((stop) => {
-              // [FIX] Destructure 'colorClass' instead of just 'color'
               const { colorClass, icon } = getMarkerStyle(stop.vehicleTypes);
               return (
                 <div
@@ -64,7 +83,7 @@ export default function StopList({
                   onClick={() => onSelectStop(stop)}
                   className="group flex items-center gap-3 p-3 cursor-pointer hover:bg-emerald-50 transition-colors"
                 >
-                  {/* ICON - [FIX] Used Tailwind class instead of inline style */}
+                  {/* ICON */}
                   <div
                     className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-white shadow-sm ${colorClass}`}
                   >

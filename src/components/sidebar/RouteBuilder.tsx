@@ -23,6 +23,7 @@ export default function RouteBuilder() {
     points,
     routeName,
     fare,
+    discountedFare,
     isFree,
     isStrict,
     transportMode,
@@ -60,6 +61,7 @@ export default function RouteBuilder() {
           routeName={routeName}
           transportMode={transportMode}
           fare={fare}
+          discountedFare={discountedFare}
           isFree={isFree}
           isStrict={isStrict}
           setField={setField}

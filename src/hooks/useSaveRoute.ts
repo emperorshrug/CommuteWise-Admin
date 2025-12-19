@@ -6,10 +6,14 @@
  * THIS HOOK CONNECTS:
  * - ZUSTAND STORES (ROUTE BUILDER + ROUTE STORE)
  * - PURE DOMAIN LOGIC (routeBuilderService)
- * - EXTERNAL SERVICES (MAPBOX DIRECTIONS + SUPABASE ROUTES)
+ * - EXTERNAL SERVICES (MAPBOX DIRECTIONS + SUPABASE ROUTES + ROUTE_STOPS)
  *
- * IT EXPOSES A SIMPLE API TO THE UI:
- *   const { isSaving, saveRoute } = useSaveRoute();
+ * BEHAVIOR:
+ * - DIRECTIONS API IS ONLY CALLED WHEN saveRoute() IS TRIGGERED BY THE USER.
+ * - THE RESULTING GEOMETRY/METRICS ARE:
+ *   1) STORED IN ZUSTAND FOR MAP RENDERING
+ *   2) PERSISTED INTO public.routes
+ *   3) USED TO SEED public.route_stops WITH PER-STOP FARES
  */
 
 import { useState } from "react";
@@ -18,6 +22,7 @@ import { useRouteStore } from "../store/useRouteStore";
 import {
   calculateRoutePath,
   saveRouteDefinition,
+  saveRouteStops,
 } from "../services/routeService";
 import {
   validateRouteContext,
@@ -31,12 +36,15 @@ export function useSaveRoute() {
     transportMode,
     isFree,
     fare,
+    discountedFare,
     isStrict,
     points,
     cancelBuilding,
+    setRouteGeometry,
+    setRouteMetricsFromApi,
   } = useRouteBuilderStore();
 
-  const { markers } = useRouteStore();
+  const markers = useRouteStore((state) => state.markers);
 
   const [isSaving, setIsSaving] = useState(false);
 
@@ -94,19 +102,48 @@ export function useSaveRoute() {
         return;
       }
 
-      // CAPS LOCK COMMENT: FOR NOW WE ONLY LOG THE GEOMETRY.
-      // CAPS LOCK COMMENT: LATER WE WILL STORE PER-SEGMENT GEOMETRY / COSTS IN route_segments.
-      console.log("COMMUTEWISE: CALCULATED ROUTE GEOMETRY", routeResult);
+      // CAPS LOCK COMMENT: UPDATE BUILDER STORE WITH FINAL, CONFIRMED ROUTE LINE
+      // CAPS LOCK COMMENT: THIS GEOMETRY WILL BE RENDERED BY RouteManagerMap VIA ROUTE NETWORK STORE
+      setRouteGeometry(routeResult.geometry);
+      setRouteMetricsFromApi(routeResult.distance, routeResult.duration);
 
-      // CAPS LOCK COMMENT: SAVE HIGH-LEVEL ROUTE DEFINITION TO SUPABASE
-      await saveRouteDefinition({
+      const effectiveFare = ctx.isFree ? 0 : ctx.fare;
+      const effectiveDiscountedFare = ctx.isFree ? 0 : discountedFare;
+
+      // CAPS LOCK COMMENT: SAVE FULL ROUTE DEFINITION (INCLUDING GEOMETRY / METRICS) TO SUPABASE
+      const savedRoute = await saveRouteDefinition({
         name: ctx.routeName.trim(),
         vehicleType: ctx.transportMode,
         originId: origin.id,
         destinationId: destination.id,
+        geometry: routeResult.geometry as {
+          type: "LineString";
+          coordinates: number[][];
+        },
+        distanceMeters: routeResult.distance,
+        durationSeconds: routeResult.duration,
+        fareAmount: effectiveFare,
+        discountedFareAmount: effectiveDiscountedFare,
+        isStrict: ctx.isStrict,
+      });
+
+      // CAPS LOCK COMMENT: PERSIST ORDERED STOPS INTO public.route_stops
+      // CAPS LOCK COMMENT: FOR NOW, PER-STOP FARES ARE SEEDED FROM ROUTE FARE
+      const routeStopsPayload = orderedStops.map((stop, index) => ({
+        stopId: stop.id,
+        sequence: index,
+        fareAmount: effectiveFare,
+        discountedFareAmount: effectiveDiscountedFare,
+      }));
+
+      await saveRouteStops({
+        routeId: savedRoute.id,
+        stops: routeStopsPayload,
       });
 
       alert("Route saved successfully.");
+
+      // CAPS LOCK COMMENT: EXIT BUILDER MODE BUT KEEP ROUTE LINE ON MAP
       cancelBuilding();
     } catch (error) {
       console.error("COMMUTEWISE: FAILED TO SAVE ROUTE:", error);

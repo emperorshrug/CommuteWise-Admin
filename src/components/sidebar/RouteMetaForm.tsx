@@ -7,25 +7,34 @@
  * - ROUTE NAME
  * - TRANSPORT MODE
  * - FARE (PHP) + FREE RIDE TOGGLE
+ * - DISCOUNTED FARE (PHP, AUTO 20% OFF BUT OVERRIDABLE)
  * - STRICT STOPS TOGGLE
  *
  * IT IS PURELY PRESENTATIONAL AND DELEGATES STATE UP VIA setField.
  */
 
+import type { RouteBuilderField } from "../../store/useRouteBuilderStore";
+
 interface RouteMetaFormProps {
   routeName: string;
   transportMode: string;
   fare: number;
+  discountedFare: number;
   isFree: boolean;
   isStrict: boolean;
-  // CAPS LOCK COMMENT: GENERIC SETFIELD SIGNATURE SO WE DO NOT TIGHTLY COUPLE TO ZUSTAND TYPE
-  setField: (field: string, value: string | number | boolean) => void;
+
+  // CAPS LOCK COMMENT: USE RouteBuilderField SO TYPES MATCH ZUSTAND STORE EXACTLY
+  setField: (
+    field: RouteBuilderField,
+    value: string | number | boolean
+  ) => void;
 }
 
 export default function RouteMetaForm({
   routeName,
   transportMode,
   fare,
+  discountedFare,
   isFree,
   isStrict,
   setField,
@@ -83,7 +92,7 @@ export default function RouteMetaForm({
             id="fare-input"
             type="number"
             min={0}
-            value={fare}
+            value={isFree ? 0 : fare}
             disabled={isFree}
             onChange={(e) => {
               const raw = Number(e.target.value);
@@ -93,6 +102,32 @@ export default function RouteMetaForm({
             className="w-full mt-1 p-2 border rounded-lg text-sm disabled:opacity-50"
           />
         </div>
+      </div>
+
+      {/* DISCOUNTED FARE */}
+      <div>
+        <label
+          htmlFor="discounted-fare-input"
+          className="text-xs font-bold text-slate-500 uppercase"
+        >
+          Discounted Fare (PHP)
+        </label>
+        <input
+          id="discounted-fare-input"
+          type="number"
+          min={0}
+          value={isFree ? 0 : discountedFare}
+          disabled={isFree}
+          onChange={(e) => {
+            // CAPS LOCK COMMENT: PASS RAW STRING SO STORE CAN HANDLE EMPTY -> AUTO BEHAVIOR
+            setField("discountedFare", e.target.value);
+          }}
+          className="w-full mt-1 p-2 border rounded-lg text-sm disabled:opacity-50"
+        />
+        <p className="mt-1 text-[11px] text-slate-400">
+          Auto 20% off base fare by default. Override manually if operators use
+          a different discounted fare.
+        </p>
       </div>
 
       {/* FLAGS */}

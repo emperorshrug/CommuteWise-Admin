@@ -1,11 +1,13 @@
-// src/components/sidebar/RouteBuilderPanel.tsx
-
 /**
  * CONTEXT: COMMUTEWISE ROUTE BUILDER PANEL
  * ========================================
  * WRAPS:
  * - RouteBuilder (THE ROUTE CREATION UI)
  * - INLINE "NEW POINT" OVERLAY WHEN CREATING A STOP FROM MAP SELECTION
+ *
+ * NOTE:
+ * - LIVE DIRECTIONS PREVIEW HAS BEEN REMOVED.
+ * - ROUTE LINES ARE NOW CALCULATED ONLY WHEN THE USER SAVES A ROUTE.
  */
 
 import RouteBuilder from "./RouteBuilder";
@@ -15,13 +17,20 @@ import { useRouteBuilderStore } from "../../store/useRouteBuilderStore";
 import type { Stop } from "../../types";
 
 export default function RouteBuilderPanel() {
-  const { selectedMarker, selectMarker, saveMarker } = useRouteStore();
-  const {
-    isSelectingOnMap,
-    confirmMapSelection,
-    cancelMapSelection,
-    isBuilding,
-  } = useRouteBuilderStore();
+  const selectedMarker = useRouteStore((state) => state.selectedMarker);
+  const selectMarker = useRouteStore((state) => state.selectMarker);
+  const saveMarker = useRouteStore((state) => state.saveMarker);
+
+  const isSelectingOnMap = useRouteBuilderStore(
+    (state) => state.isSelectingOnMap
+  );
+  const confirmMapSelection = useRouteBuilderStore(
+    (state) => state.confirmMapSelection
+  );
+  const cancelMapSelection = useRouteBuilderStore(
+    (state) => state.cancelMapSelection
+  );
+  const isBuilding = useRouteBuilderStore((state) => state.isBuilding);
 
   // CAPS LOCK COMMENT: IF ROUTE BUILDER IS NOT ACTIVE, NOTHING TO RENDER
   if (!isBuilding) return null;
