@@ -127,7 +127,7 @@ export default function StopManagerPanel({ onClose }: StopManagerPanelProps) {
 
         {/* ROUTE EDIT OVERLAY (USES SAME META FIELDS AS CREATE, BUT UPDATING EXISTING ROUTE) */}
         {editingRoute && (
-          <div className="absolute inset-0 bg-white/95 z-20 shadow-xl">
+          <div className="absolute inset-0 bg-white/95 z-20 shadow-xl pointer-events-auto overflow-y-auto">
             <RouteEditForm route={editingRoute} onClose={clearEditingRoute} />
           </div>
         )}

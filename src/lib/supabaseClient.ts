@@ -24,4 +24,10 @@ if (!supabaseUrl || !supabaseKey) {
   );
 }
 
+// CAPS LOCK COMMENT: LOG KEY TYPE FOR DEBUGGING AUTH ISSUES
+const isServiceKey = !!import.meta.env.VITE_SUPABASE_KEY;
+console.log(
+  `COMMUTEWISE: USING ${isServiceKey ? "SERVICE" : "ANON"} KEY FOR SUPABASE`
+);
+
 export const supabase = createClient(supabaseUrl, supabaseKey);

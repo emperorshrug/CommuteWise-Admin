@@ -147,7 +147,30 @@ export function useSaveRoute() {
       cancelBuilding();
     } catch (error) {
       console.error("COMMUTEWISE: FAILED TO SAVE ROUTE:", error);
-      alert("Failed to save route. Please check the console for details.");
+
+      // CAPS LOCK COMMENT: PROVIDE MORE SPECIFIC ERROR MESSAGES
+      let errorMessage =
+        "Failed to save route. Please check the console for details.";
+      if (error instanceof Error) {
+        if (
+          error.message.includes("401") ||
+          error.message.includes("Unauthorized")
+        ) {
+          errorMessage =
+            "Authentication failed. Please check your Supabase configuration and permissions.";
+        } else if (
+          error.message.includes("403") ||
+          error.message.includes("Forbidden")
+        ) {
+          errorMessage =
+            "Permission denied. Please check Row Level Security policies in Supabase.";
+        } else if (error.message.includes("Mapbox")) {
+          errorMessage =
+            "Failed to calculate route path. Please adjust the stops and try again.";
+        }
+      }
+
+      alert(errorMessage);
     } finally {
       setIsSaving(false);
     }
